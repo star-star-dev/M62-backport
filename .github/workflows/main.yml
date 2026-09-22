@@ -1,12 +1,11 @@
 name: Build and Release
+
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        device: [d1, d1xks, d2x, d2s, d2xks]
+    name: Build Original Kernel
     runs-on: ubuntu-24.04
     steps:
       - name: "⏰Set Time Zone to Beijing"
@@ -16,14 +15,14 @@ jobs:
       - name: "🚄Set up build environment"
         run: |
           sudo apt-get update
-          sudo apt-get install -y git-core flex bison build-essential zip curl zlib1g-dev libc6-dev-i386 lib32z1-dev unzip
+          sudo apt-get install -y git-core flex bison build-essential zip curl zlib1g-dev libc6-dev-i386 lib32z1-dev unzip xz-utils cpio
 
       - name: "⭐Checkout repository with submodules"
         uses: actions/checkout@v7
         with:
           submodules: true
 
-      - name: "💡 Setup KernelSU-Next"
+      - name: "💡 Setup KernelSU-Next (legacy-susfs-v2)"
         run: |
           if [ -d "./KernelSU" ]; then rm -rf "./KernelSU"; fi
           if [ -d "./drivers/KernelSU" ]; then rm -rf "./drivers/KernelSU"; fi
@@ -36,17 +35,85 @@ jobs:
           cd ..
           curl -LSs "https://raw.githubusercontent.com/sidex15/KernelSU-Next/stable/kernel/setup.sh" | bash -s origin/legacy-susfs-v2
 
-
-      - name: "🐎Build for specific device"
-        run: ./build.sh -m ${{ matrix.device }} -k Y -r N
-
-      - name: "💫Prepare ZIP files for upload"
+      - name: "🐎Build Unified Kernel Package"
         run: |
-          mkdir -p ${{ github.workspace }}/build/out/zip_files
-          find ${{ github.workspace }}/build/out/ -type f -name "*.zip" -exec cp {} ${{ github.workspace }}/build/out/zip_files/ \;
+          chmod +x build.sh
+          ./build.sh -m all -k y -r n
 
-      - name: "😎Upload ZIP files as artifact"
+      - name: "💫Prepare Unified ZIP for upload"
+        run: |
+          mkdir -p ${{ github.workspace }}/upload
+          cp build/*.zip ${{ github.workspace }}/upload/
+          echo "=== Files in upload directory ==="
+          ls -la ${{ github.workspace }}/upload/
+
+      - name: "😎Upload Unified ZIP as artifact"
         uses: actions/upload-artifact@v7
         with:
-          name: "ExtremeKRNL-Quant-Susfs-${{ matrix.device }}"
-          path: ${{ github.workspace }}/build/out/zip_files/
+          name: "Star7KRNL-Unified-Package"
+          path: ${{ github.workspace }}/upload/*.zip
+
+  build-droidspaces:
+    name: Build Droidspaces non-GKI Kernel
+    runs-on: ubuntu-24.04
+    steps:
+      - name: "⏰Set Time Zone to Beijing"
+        run: |
+          sudo timedatectl set-timezone "Asia/Shanghai"
+
+      - name: "🚄Set up build environment"
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git-core flex bison build-essential zip curl patch zlib1g-dev libc6-dev-i386 lib32z1-dev unzip xz-utils cpio
+
+      - name: "⭐Checkout repository with submodules"
+        uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: "💡 Setup KernelSU-Next (legacy-susfs-v2)"
+        run: |
+          if [ -d "./KernelSU" ]; then rm -rf "./KernelSU"; fi
+          if [ -d "./drivers/KernelSU" ]; then rm -rf "./drivers/KernelSU"; fi
+          
+          echo "🔧 Using legacy-susfs-v2 branch from sidex15"
+          git clone https://github.com/sidex15/KernelSU-Next.git KernelSU-Next
+          cd KernelSU-Next
+          git fetch --all
+          git checkout origin/legacy-susfs-v2
+          cd ..
+          curl -LSs "https://raw.githubusercontent.com/sidex15/KernelSU-Next/stable/kernel/setup.sh" | bash -s origin/legacy-susfs-v2
+
+      - name: "🩹Apply compatible Droidspaces non-GKI patches"
+        run: |
+          git clone --depth=1 https://github.com/Star-Seven/Droidspaces-OSS.git droidspaces
+          PATCH_DIR="droidspaces/Documentation/resources/kernel-patches/non-GKI"
+          if [ -f net/netfilter/xt_qtaguid.c ]; then
+            patch -p1 < "$PATCH_DIR/01.fix_kernel_panic_in_xt_qtaguid.patch"
+          else
+            echo "Skipping patch 01: net/netfilter/xt_qtaguid.c is absent in this kernel tree."
+          fi
+          test -f kernel/cgroup/cgroup.c
+          patch -p1 < "$PATCH_DIR/02.fix_restore cgroup file prefix handling .patch"
+
+      - name: "⚙️Enable Droidspaces configuration"
+        run: |
+          sed -i 's/\$REF_CONF \$KSU_CONFIG \$RECOVERY_CONFIG/\$REF_CONF droidspaces.config \$KSU_CONFIG \$RECOVERY_CONFIG/' build.sh
+
+      - name: "🐎Build Droidspaces Kernel Package"
+        run: |
+          chmod +x build.sh
+          ./build.sh -m all -k y -r n
+
+      - name: "💫Prepare Droidspaces ZIP for upload"
+        run: |
+          mkdir -p ${{ github.workspace }}/upload
+          cp build/*.zip ${{ github.workspace }}/upload/
+          echo "=== Files in upload directory ==="
+          ls -la ${{ github.workspace }}/upload/
+
+      - name: "😎Upload Droidspaces ZIP as artifact"
+        uses: actions/upload-artifact@v7
+        with:
+          name: "Star7KRNL-Droidspaces-non-GKI-Package"
+          path: ${{ github.workspace }}/upload/*.zip
