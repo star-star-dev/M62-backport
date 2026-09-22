@@ -27,8 +27,8 @@ jobs:
           if [ -d "./KernelSU" ]; then rm -rf "./KernelSU"; fi
           if [ -d "./drivers/KernelSU" ]; then rm -rf "./drivers/KernelSU"; fi
           
-          echo "🔧 Using legacy-susfs-v2 branch from sidex15"
-          git clone https://github.com/sidex15/KernelSU-Next.git KernelSU-Next
+          echo "🔧 Using legacy-susfs-v2 branch from star-star-dev"
+          git clone https://github.com/star-star-dev/KernelSU-Next.git KernelSU-Next
           cd KernelSU-Next
           git fetch --all
           git checkout origin/legacy-susfs-v2
@@ -78,8 +78,8 @@ jobs:
           if [ -d "./KernelSU" ]; then rm -rf "./KernelSU"; fi
           if [ -d "./drivers/KernelSU" ]; then rm -rf "./drivers/KernelSU"; fi
           
-          echo "🔧 Using legacy-susfs-v2 branch from sidex15"
-          git clone https://github.com/sidex15/KernelSU-Next.git KernelSU-Next
+          echo "🔧 Using legacy-susfs-v2 branch from star-star-dev"
+          git clone https://github.com/star-star-dev/KernelSU-Next.git KernelSU-Next
           cd KernelSU-Next
           git fetch --all
           git checkout origin/legacy-susfs-v2
