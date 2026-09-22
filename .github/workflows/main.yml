@@ -33,7 +33,7 @@ jobs:
           git fetch --all
           git checkout origin/legacy-susfs-v2
           cd ..
-          curl -LSs "https://raw.githubusercontent.com/sidex15/KernelSU-Next/stable/kernel/setup.sh" | bash -s origin/legacy-susfs-v2
+          curl -LSs "https://raw.githubusercontent.com/star-star-dev/KernelSU-Next/stable/kernel/setup.sh" | bash -s origin/legacy-susfs-v2
 
       - name: "🐎Build Unified Kernel Package"
         run: |
@@ -84,7 +84,7 @@ jobs:
           git fetch --all
           git checkout origin/legacy-susfs-v2
           cd ..
-          curl -LSs "https://raw.githubusercontent.com/sidex15/KernelSU-Next/stable/kernel/setup.sh" | bash -s origin/legacy-susfs-v2
+          curl -LSs "https://raw.githubusercontent.com/star-star-dev/KernelSU-Next/stable/kernel/setup.sh" | bash -s origin/legacy-susfs-v2
 
       - name: "🩹Apply compatible Droidspaces non-GKI patches"
         run: |
